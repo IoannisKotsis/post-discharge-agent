@@ -1,5 +1,3 @@
-# When to call a doctor / red flags
-
 ## Call a doctor (NHS)
 Source: https://www.nhs.uk/conditions/type-2-diabetes/treatment/
 
@@ -33,7 +31,7 @@ Bring any medicines you take with you.
 
 
 ## Diabetes and planning for sick days (ADA)
-Source: 
+Source: https://diabetes.org/living-with-diabetes/sick-days
 
 The following are warning signs of DKA. If you experience any of these, contact your doctor immediately. 
 

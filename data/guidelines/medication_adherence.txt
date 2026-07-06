@@ -1,5 +1,3 @@
-# When to start / which medication (indications)
-
 ## Metformin (NIH/NCBI)
 Source: https://www.ncbi.nlm.nih.gov/books/NBK518983/
 
@@ -47,4 +45,3 @@ If you need medicine to treat your type 2 diabetes, and you do not have any othe
     - You may need to take insulin a few times a day, either by injection or through a pump. This will help keep your blood glucose levels within a normal range.
     - You'll be told how much to take and when to take it. Taking too much insulin can cause your blood glucose levels to go too low. This is known as hypoglycaemia or
       having a "hypo".
-    
