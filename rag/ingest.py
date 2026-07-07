@@ -1,6 +1,7 @@
 # Import neecessary modules
 from pathlib import Path
 import re
+import chromadb
 
 # Read all .txt files
 files = Path("../data/guidelines").glob("*.txt")
@@ -33,8 +34,10 @@ for filename, text in content.items():
                 metadatas.append(meta)         
             ids.append(filename + "_" + str(counter))
             counter+=1
-    
-
-print(len(texts), len(metadatas), len(ids))
-
-
+            
+# Create ChromaDB
+client = chromadb.PersistentClient("../chroma_db")
+collection = client.get_or_create_collection("diabetes_guidelines")
+collection.add(documents=texts,
+               metadatas=metadatas,
+               ids=ids)
