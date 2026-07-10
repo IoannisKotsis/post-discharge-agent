@@ -10,5 +10,3 @@ class AgentState(TypedDict):
     red_flag: Literal["none", "advice", "urgent", "emergency"]
     summary: str
     messages: Annotated[list, add_messages]
-    
-
