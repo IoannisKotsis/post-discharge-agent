@@ -19,9 +19,3 @@ def retrieve(question, n_results=3):
         results.append(doc_meta)
     
     return results
-        
-
-for r in retrieve("I feel shaky and sweaty"):
-    print(r["source"])
-    print(r["text"][:80])
-    print("---")
