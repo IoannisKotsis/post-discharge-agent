@@ -80,11 +80,18 @@ def check_symptoms(state: AgentState):
 
 
 # Decide severity: escalate if urgent/emergency , else ask follow-up question
+HIGH_RISK_THRESHOLD = 0.7
+
 def route_severity(state: AgentState):
+    # Serious symptom always escalates — risk score cannot override
     if state["red_flag"] in ("urgent", "emergency"):
         return "escalate"
-    else:
-        return "ask_followup"
+    # Mild symptom but high-risk patient → upgrade to escalate (score only raises, never lowers)
+    risk = state["risk_score"]
+    if risk is not None and risk >= HIGH_RISK_THRESHOLD:
+        return "escalate"
+    # Mild symptom, low risk → routine follow-up
+    return "ask_followup"
     
 
 # Escalate case
@@ -144,6 +151,8 @@ def initial_state(patient_id, first_message):
         "summary": "",
         "messages": [first_message],
     }
-        
+
+
+
         
     
