@@ -4,6 +4,7 @@ from langgraph.graph.message import add_messages
 
 # Create the state class
 class AgentState(TypedDict):
+    patient_id: int
     risk_score: float
     shap_features: dict
     retrieved_chunks: list

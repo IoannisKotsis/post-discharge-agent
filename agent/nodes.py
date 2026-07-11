@@ -5,6 +5,8 @@ from rag.retriever import retrieve
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import SystemMessage, HumanMessage
 from dotenv import load_dotenv
+import os
+import requests
 
 # Import environment variables from .env
 load_dotenv()
@@ -109,3 +111,39 @@ def escalate(state: AgentState):
     ])
     
     return {"messages": [response]}
+
+
+# Assess risk score from patient
+def assess_risk(state: AgentState):
+    if state.get("risk_score") is not None:
+        return {}
+    patient_id = state["patient_id"]
+    
+    url = os.getenv("READMISSION_API_URL")
+    final_url = f"{url}/risk/{patient_id}"
+    
+    try:
+        response = requests.get(final_url)
+        response.raise_for_status()
+        data = response.json()
+        risk_score = data["risk_score"]
+    except Exception as e:
+        print(f"Risk API failed: {e}")
+        risk_score = 1
+        
+    return {"risk_score": float(risk_score)}
+
+# Initial state fields
+def initial_state(patient_id, first_message):
+    return {
+        "patient_id": patient_id,
+        "risk_score": None,
+        "red_flag": "none",
+        "retrieved_chunks": [],
+        "shap_features": {},
+        "summary": "",
+        "messages": [first_message],
+    }
+        
+        
+    
