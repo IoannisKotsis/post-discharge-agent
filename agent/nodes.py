@@ -47,4 +47,65 @@ def route_start(state: AgentState):
     if len(state["messages"]) == 0:
         return "greet"
     else:
+        return "check_symptoms"
+
+    
+# Decide the symptoms severity
+CLASSIFY_PROMPT = """
+You are a triage classifier for diabetic patients after discharge.
+You read the patient's message and you respond ONLY with one word: none, advice, urgent, or emergency. No explanation.
+The criterias are: 
+    - emergency: DKA signs or life-threatening (fruity breath, confusion, difficulty breathing, high ketones...)
+    - urgent: "call 999" cases / go to A&E (feeling very sick, drowsy, can't stay awake...)
+    - advice: contact your doctor soon (symptoms that do not subside, mild but constant)
+    - none: everything is fine, no need to worry
+"""
+
+def check_symptoms(state: AgentState):
+    patient_message = state["messages"][-1].content
+    
+    response = llm.invoke([
+        SystemMessage(CLASSIFY_PROMPT),
+        HumanMessage(f"Patient said: {patient_message}")      
+    ])
+    
+    severity_levels = ["none", "advice", "urgent", "emergency"]
+    symptoms_severity = "".join(c for c in (response.content).strip().lower() if c.isalpha())
+    if symptoms_severity not in severity_levels:
+        symptoms_severity = "advice"
+        
+    return {"red_flag": symptoms_severity}
+
+
+# Decide severity: escalate if urgent/emergency , else ask follow-up question
+def route_severity(state: AgentState):
+    if state["red_flag"] in ("urgent", "emergency"):
+        return "escalate"
+    else:
         return "ask_followup"
+    
+
+# Escalate case
+ESCALATE_PROMPT = """
+You are a post-discharge assistant for diabetic patients and you are guiding the patient to care actions if the symptoms are severe.
+You are reading their message and you are responding to them based on the severity (urgent or emergency).
+For emergency, direct them to call emergency services immediately; for urgent, advise contacting their care team or attending A&E soon.
+Your answer will be based ONLY on given guidelines and you are making no diagnosis.Your talking tone is serious but calm, not panicky.
+"""
+
+def escalate(state: AgentState):
+    patient_message = state["messages"][-1].content
+    severity_level = state["red_flag"]
+    
+    retrieved = retrieve(patient_message)
+    
+    context = ""
+    for chunk in retrieved:
+        context += f"{chunk['text']}\n"
+    
+    response = llm.invoke([
+        SystemMessage(ESCALATE_PROMPT),
+        HumanMessage(f"Patient said: {patient_message}\nSymptoms severity: {severity_level}\nRelevant guidelines:\n{context}")      
+    ])
+    
+    return {"messages": [response]}
