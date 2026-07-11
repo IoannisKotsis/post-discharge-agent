@@ -41,3 +41,10 @@ def ask_followup(state: AgentState):
     ])
             
     return {"retrieved_chunks": retrieved, "messages": [response]}
+
+# Decide entry point: greet if conversation just started, else answer the patient
+def route_start(state: AgentState):
+    if len(state["messages"]) == 0:
+        return "greet"
+    else:
+        return "ask_followup"
