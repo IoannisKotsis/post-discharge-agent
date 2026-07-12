@@ -91,6 +91,8 @@ def route_severity(state: AgentState):
     if risk is not None and risk >= HIGH_RISK_THRESHOLD:
         return "escalate"
     # Mild symptom, low risk → routine follow-up
+    if state["red_flag"] == "none":     
+        return "reassure"
     return "ask_followup"
     
 
@@ -158,6 +160,33 @@ def initial_state(patient_id, first_message):
     }
 
 
+# Reassure case
+REASSURANCE_PROMPT = """
+You are a post-discharge assistant for diabetic patients and trying to reassure them when their symptoms are not severe.
+Use ONLY the guidelines provided below. If they don't cover the situation, tell the patient that you cannot offer a specific guidance and that they need to contact
+their care team. Your talking tone is serious and calm. The goal is to comfort the patient and not make him have second thoughts about their symptoms.
+"""
+
+def reassure(state: AgentState):
+    patient_message = state["messages"][-1].content
+    
+    try:
+        retrieved = retrieve(patient_message)
+    except Exception as e:
+        print(f"Retrieval failed: {e}")
+        retrieved = []
+    
+    if not retrieved:
+        return {"messages": [AIMessage("Based on what you've described, this doesn't appear urgent, but contact your care team as I cannot guide you specifically at this point.")]}
+    
+    context = "\n".join(chunk["text"] for chunk in retrieved)
+    response = llm.invoke([
+        SystemMessage(REASSURANCE_PROMPT),
+        HumanMessage(f"Patient said: {patient_message}\n\nRelevant guidelines:\n{context}")      
+    ])
+    
+    return {"messages": [response]}
+    
 
         
     
