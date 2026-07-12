@@ -99,19 +99,24 @@ ESCALATE_PROMPT = """
 You are a post-discharge assistant for diabetic patients and you are guiding the patient to care actions if the symptoms are severe.
 You are reading their message and you are responding to them based on the severity (urgent or emergency).
 For emergency, direct them to call emergency services immediately; for urgent, advise contacting their care team or attending A&E soon.
-Your answer will be based ONLY on given guidelines and you are making no diagnosis.Your talking tone is serious but calm, not panicky.
+Use ONLY the guidelines provided below. If they don't cover the situation, tell the patient to seek professional help — do not invent medical advice.
+Your talking tone is serious but calm, not panicky.
 """
 
 def escalate(state: AgentState):
     patient_message = state["messages"][-1].content
     severity_level = state["red_flag"]
     
-    retrieved = retrieve(patient_message)
+    try:
+        retrieved = retrieve(patient_message)
+    except Exception as e:
+        print(f"Retrieval failed: {e}")
+        retrieved = []
     
-    context = ""
-    for chunk in retrieved:
-        context += f"{chunk['text']}\n"
+    if not retrieved:
+        return {"messages": [AIMessage("Contact immediately a doctor or go to A&E.")]}
     
+    context = "\n".join(chunk["text"] for chunk in retrieved)
     response = llm.invoke([
         SystemMessage(ESCALATE_PROMPT),
         HumanMessage(f"Patient said: {patient_message}\nSymptoms severity: {severity_level}\nRelevant guidelines:\n{context}")      

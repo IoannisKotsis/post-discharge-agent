@@ -1,8 +1,14 @@
 # Import necessary modules
 import chromadb
+import os
+
+# Paths
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CHROMA_PATH = os.path.join(BASE_DIR, "..", "chroma_db")
+
 
 # Open a new Chromadb connection
-client = chromadb.PersistentClient("../chroma_db")
+client = chromadb.PersistentClient(CHROMA_PATH)
 collection = client.get_or_create_collection("diabetes_guidelines")
 
 # Return relative chunks
@@ -19,3 +25,5 @@ def retrieve(question, n_results=3):
         results.append(doc_meta)
     
     return results
+
+retrieve("I'm confused, breathing fast, and my breath smells fruity")
