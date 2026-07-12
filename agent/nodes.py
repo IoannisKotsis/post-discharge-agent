@@ -42,7 +42,7 @@ def ask_followup(state: AgentState):
         HumanMessage(f"Patient said: {patient_message}\n\nRelevant guidelines:\n{context}")      
     ])
             
-    return {"retrieved_chunks": retrieved, "messages": [response]}
+    return {"retrieved_chunks": retrieved, "messages": [response], "outcome": "followup"}
 
 # Decide entry point: greet if conversation just started, else answer the patient
 def route_start(state: AgentState):
@@ -98,16 +98,18 @@ def route_severity(state: AgentState):
 
 # Escalate case
 ESCALATE_PROMPT = """
-You are a post-discharge assistant for diabetic patients and you are guiding the patient to care actions if the symptoms are severe.
-You are reading their message and you are responding to them based on the severity (urgent or emergency).
+You are a post-discharge assistant for diabetic patients and you are guiding the patient to care actions because the symptoms are severe.
+You are reading their message and you are responding to them based on the severity (urgent or emergency). 
 For emergency, direct them to call emergency services immediately; for urgent, advise contacting their care team or attending A&E soon.
+If Readmsission risk is high (above 70%), escalate even if the symptoms seem mild. The high risk alone justifies the contact with a care team.
 Use ONLY the guidelines provided below. If they don't cover the situation, tell the patient to seek professional help — do not invent medical advice.
-Your talking tone is serious but calm, not panicky.
+Your talking tone is serious but calm, not panicky. Do not close with a question but give a clear response in total.
 """
 
 def escalate(state: AgentState):
     patient_message = state["messages"][-1].content
     severity_level = state["red_flag"]
+    risk_score = state["risk_score"]
     
     try:
         retrieved = retrieve(patient_message)
@@ -121,10 +123,11 @@ def escalate(state: AgentState):
     context = "\n".join(chunk["text"] for chunk in retrieved)
     response = llm.invoke([
         SystemMessage(ESCALATE_PROMPT),
-        HumanMessage(f"Patient said: {patient_message}\nSymptoms severity: {severity_level}\nRelevant guidelines:\n{context}")      
+        HumanMessage(f"Patient said: {patient_message}\nSymptoms severity: {severity_level}\nReadmission risk: {risk_score}\nRelevant guidelines:\n{context}")      
     ])
     
-    return {"messages": [response]}
+    print("ESCALATE TEXT:", response.content)
+    return {"messages": [response], "outcome": "escalate"}
 
 
 # Assess risk score from patient
@@ -185,7 +188,7 @@ def reassure(state: AgentState):
         HumanMessage(f"Patient said: {patient_message}\n\nRelevant guidelines:\n{context}")      
     ])
     
-    return {"messages": [response]}
+    return {"messages": [response], "outcome": "reassure"}
 
 # Summarize conversation
 

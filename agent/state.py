@@ -9,5 +9,6 @@ class AgentState(TypedDict):
     shap_features: dict
     retrieved_chunks: list
     red_flag: Literal["none", "advice", "urgent", "emergency"]
+    outcome: Literal["escalate", "reassure", "followup"]
     summary: str
     messages: Annotated[list, add_messages]
