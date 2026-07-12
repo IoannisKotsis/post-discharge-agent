@@ -28,7 +28,6 @@ if not st.session_state["closed"]:
     if prompt := st.chat_input("👋Hello, how are you feeling today?"):
         st.session_state["messages"].append({"role": "user", "content": prompt})
         result = app.invoke(initial_state(8, HumanMessage(prompt)))
-        print("DEBUG outcome:", result["outcome"])
         st.session_state["messages"].append(
             {"role": "assistant", "content": result["messages"][-1].content}
         )
@@ -41,6 +40,11 @@ else:
         st.info("No need to worry. Have a great day!")
     elif st.session_state["outcome"] == "escalate":
         st.info("Please follow the guidance above and seek care as advised. Take care.")
+    if st.button("💬New conversation"):
+        st.session_state["messages"] = []
+        st.session_state["closed"] = False
+        st.session_state["outcome"] = None
+        st.rerun()
     
         
         
