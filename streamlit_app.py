@@ -8,6 +8,16 @@ from agent.graph import app
 # UI Title
 st.title("Post-discharge Follow-up Assistant")
 
+# App explanation markdown
+st.markdown("""This assistant helps you check in after your hospital discharge.
+            Tell me how you're feeling, and I'll guide you on whether to rest, monitor, or seek care.
+            This is not a substitute for emergency services — if you feel very unwell, call 999.
+            """)
+
+# Page configuration
+st.set_page_config(page_title="Post-discharge Follow-up Assistant", page_icon="🏥", layout="centered")
+
+
 # Initialization : ONLY the first time
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
@@ -21,13 +31,16 @@ if "outcome" not in st.session_state:
 
 # Chat history
 for msg in st.session_state["messages"]:
-    with st.chat_message(msg["role"]):
+    with st.chat_message(msg["role"], avatar="🩺" if msg["role"]=="assistant" else "🧑"):
         st.write(msg["content"])
 
 if not st.session_state["closed"]:
     if prompt := st.chat_input("👋Hello, how are you feeling today?"):
         st.session_state["messages"].append({"role": "user", "content": prompt})
-        result = app.invoke(initial_state(8, HumanMessage(prompt)))
+        
+        with st.spinner("Checking your symptoms..."):
+            result = app.invoke(initial_state(2, HumanMessage(prompt)))
+        
         st.session_state["messages"].append(
             {"role": "assistant", "content": result["messages"][-1].content}
         )

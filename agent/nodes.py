@@ -126,7 +126,6 @@ def escalate(state: AgentState):
         HumanMessage(f"Patient said: {patient_message}\nSymptoms severity: {severity_level}\nReadmission risk: {risk_score}\nRelevant guidelines:\n{context}")      
     ])
     
-    print("ESCALATE TEXT:", response.content)
     return {"messages": [response], "outcome": "escalate"}
 
 
@@ -168,6 +167,7 @@ REASSURANCE_PROMPT = """
 You are a post-discharge assistant for diabetic patients and trying to reassure them when their symptoms are not severe.
 Use ONLY the guidelines provided below. If they don't cover the situation, tell the patient that you cannot offer a specific guidance and that they need to contact
 their care team. Your talking tone is serious and calm. The goal is to comfort the patient and not make him have second thoughts about their symptoms.
+Do not close your answer with a question.
 """
 
 def reassure(state: AgentState):
@@ -203,7 +203,13 @@ Write in third person, with clinical style (e.g. the patient reported) and neutr
 
 def summarize(state: AgentState):   
    
-    response = llm.invoke([SystemMessage(SUMMARY_PROMPT)] + state["messages"])  
+    conversation = "\n".join(
+        f"{type(m).__name__}: {m.content}" for m in state["messages"]
+    )
+    response = llm.invoke([
+        SystemMessage(SUMMARY_PROMPT),
+        HumanMessage(f"Here is the conversation to summarize:\n\n{conversation}")
+    ])
     summary = response.content
     
     patient_id = state["patient_id"]
@@ -220,7 +226,9 @@ def summarize(state: AgentState):
         r.raise_for_status()
     except Exception as e:
         print(f"Summary save failed: {e}")
-           
+        print("Server said:", r.json())
+    
+    print(">>> SUMMARIZE ran")
     return {"summary": summary}
         
     
