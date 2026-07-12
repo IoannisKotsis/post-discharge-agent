@@ -186,7 +186,38 @@ def reassure(state: AgentState):
     ])
     
     return {"messages": [response]}
-    
 
+# Summarize conversation
+
+SUMMARY_PROMPT = """
+You are a post-discharge assistant for diabetic patients. You are reading the messages exchanged between the agent and the patient
+and you give to the doctor a summary of this conversation, without adding additional information. The summary must include:
+    - patient's symptoms
+    - conversation outcome (escalation / advice)
+The summary must be concise (2-3 sentences) in order for the doctor to scan it fast and understand the meaning easily.
+Write in third person, with clinical style (e.g. the patient reported) and neutral tone.
+"""
+
+def summarize(state: AgentState):   
+   
+    response = llm.invoke([SystemMessage(SUMMARY_PROMPT)] + state["messages"])  
+    summary = response.content
+    
+    patient_id = state["patient_id"]
+    red_flag = state["red_flag"]
+    url = os.getenv("READMISSION_API_URL")
+    final_url = f"{url}/summary"
+    
+    try:
+        r = requests.post(final_url, json = {
+            "patient_id": patient_id,
+            "summary": summary,
+            "final_red_flag": red_flag
+            })
+        r.raise_for_status()
+    except Exception as e:
+        print(f"Summary save failed: {e}")
+           
+    return {"summary": summary}
         
     
