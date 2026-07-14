@@ -10,6 +10,32 @@ Hospital readmissions are costly and preventable. The first system predicts whic
 This assistant helps by providing conversational follow-up that acts on the risk score, triaging symptoms and guiding patients toward the right level of care.
 
 ## Architecture
+```mermaid
+graph TD;
+     __start__([<p>__start__</p>]):::first
+        greet(greet)
+        ask_followup(ask_followup)
+        check_symptoms(check_symptoms)
+        escalate(escalate)
+        assess_risk(assess_risk)
+        reassure(reassure)
+        summarize(summarize)
+        __end__([<p>__end__</p>]):::last
+        __start__ -.-> check_symptoms;
+        __start__ -.-> greet;
+        ask_followup --> summarize;
+        assess_risk -.-> ask_followup;
+        assess_risk -.-> escalate;
+        assess_risk -.-> reassure;
+        check_symptoms --> assess_risk;
+        escalate --> summarize;
+        greet --> __end__;
+        reassure --> __end__;
+        summarize --> __end__;
+        classDef default fill:#f2f0ff,line-height:1.2
+        classDef first fill-opacity:0
+        classDef last fill:#bfb6fc
+```
 
 
 ## Key Design Decisions
