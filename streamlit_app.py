@@ -1,14 +1,17 @@
-# Bridge secrets to environments
-os.environ["ANTHROPIC_API_KEY"] = st.secrets["ANTHROPIC_API_KEY"]
-os.environ["READMISSION_API_URL"] = st.secrets["READMISSION_API_URL"]
-
 # Import necessary modules
+import os
 import streamlit as st
 from agent.graph import app
 from langchain_core.messages import HumanMessage, AIMessage
 from agent.nodes import initial_state
 from agent.graph import app
-import os
+
+# Bridge secrets to environments
+os.environ["ANTHROPIC_API_KEY"] = st.secrets["ANTHROPIC_API_KEY"]
+os.environ["READMISSION_API_URL"] = st.secrets["READMISSION_API_URL"]
+
+
+
 
 # UI Title
 st.title("Post-discharge Follow-up Assistant")
