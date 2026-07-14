@@ -28,10 +28,23 @@ graph.add_node("reassure", reassure)
 graph.add_node("summarize", summarize)
 
 # Wire up edges
-graph.add_conditional_edges(START, route_start)
+graph.add_conditional_edges(
+    START, route_start,
+    {
+     "greet": "greet",
+     "check_symptoms": "check_symptoms"
+     }
+)
 graph.add_edge("greet", END)
 graph.add_edge("check_symptoms", "assess_risk")
-graph.add_conditional_edges("assess_risk", route_severity)
+graph.add_conditional_edges(
+    "assess_risk", route_severity,
+        {
+        "escalate": "escalate",
+        "reassure": "reassure",
+        "ask_followup": "ask_followup",
+        }
+)
 graph.add_edge("escalate", "summarize")
 graph.add_edge("ask_followup", "summarize")
 graph.add_edge("summarize", END)
