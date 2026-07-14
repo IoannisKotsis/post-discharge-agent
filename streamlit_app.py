@@ -11,8 +11,6 @@ os.environ["ANTHROPIC_API_KEY"] = st.secrets["ANTHROPIC_API_KEY"]
 os.environ["READMISSION_API_URL"] = st.secrets["READMISSION_API_URL"]
 
 
-
-
 # UI Title
 st.title("Post-discharge Follow-up Assistant")
 
@@ -47,7 +45,7 @@ if not st.session_state["closed"]:
         st.session_state["messages"].append({"role": "user", "content": prompt})
         
         with st.spinner("Checking your symptoms..."):
-            result = app.invoke(initial_state(2, HumanMessage(prompt)))
+            result = app.invoke(initial_state(8, HumanMessage(prompt)))
         
         st.session_state["messages"].append(
             {"role": "assistant", "content": result["messages"][-1].content}

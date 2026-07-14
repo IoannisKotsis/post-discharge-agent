@@ -40,7 +40,3 @@ graph.add_edge("reassure", END)
 
 # Compile (last!)
 app = graph.compile()
-
-# Test
-#result = app.invoke(initial_state(8, HumanMessage("I have fever and feeling shaky. My breath smells fruity")))
-#print(result["messages"][-1].content)
