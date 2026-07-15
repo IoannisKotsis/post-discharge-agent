@@ -26,12 +26,14 @@ You talk simply, with empathy and kindly.
 
 # Greeting
 def greet(state: AgentState):
+    """Return the opening message when a conversation starts."""
     greeting = AIMessage("Hello, how are you feeling today?")
     return {"messages": [greeting]}
 
 
 # Ask followup
 def ask_followup(state: AgentState):
+    """Answer a mild-symptom message with RAG-grounded guidance and a follow-up question."""
     patient_message = state["messages"][-1].content
     retrieved = retrieve(patient_message)
 
@@ -57,6 +59,7 @@ def ask_followup(state: AgentState):
 
 # Decide entry point: greet if conversation just started, else answer the patient
 def route_start(state: AgentState):
+    """Entry router: greet on an empty conversation, otherwise triage the message."""
     if len(state["messages"]) == 0:
         return "greet"
     else:
@@ -76,6 +79,7 @@ The criterias are:
 
 
 def check_symptoms(state: AgentState):
+    """Classify the patient's message into one of four severity levels; defaults to 'advice' if unparseable."""
     patient_message = state["messages"][-1].content
 
     response = llm.invoke(
@@ -100,6 +104,7 @@ HIGH_RISK_THRESHOLD = 0.7
 
 
 def route_severity(state: AgentState):
+    """Route to escalate/reassure/ask_followup. Risk score can only raise severity, never lower it."""
     # Serious symptom always escalates — risk score cannot override
     if state["red_flag"] in ("urgent", "emergency"):
         return "escalate"
@@ -125,6 +130,7 @@ Your talking tone is serious but calm, not panicky. Do not close with a question
 
 
 def escalate(state: AgentState):
+    """Direct the patient to urgent care, grounded in guidelines; falls back to a safe message if retrieval fails."""
     patient_message = state["messages"][-1].content
     severity_level = state["red_flag"]
     risk_score = state["risk_score"]
@@ -153,6 +159,7 @@ def escalate(state: AgentState):
 
 # Assess risk score from patient
 def assess_risk(state: AgentState):
+    """Fetch the patient's readmission risk from the prediction API; assumes maximum risk (1.0) on failure."""
     if state.get("risk_score") is not None:
         return {}
     patient_id = state["patient_id"]
@@ -174,6 +181,7 @@ def assess_risk(state: AgentState):
 
 # Initial state fields
 def initial_state(patient_id, first_message):
+    """Build a fresh AgentState for a new conversation."""
     return {
         "patient_id": patient_id,
         "risk_score": None,
@@ -195,6 +203,7 @@ Do not close your answer with a question.
 
 
 def reassure(state: AgentState):
+    """Reassure the patient when symptoms are mild and risk is low, grounded in guidelines."""
     patient_message = state["messages"][-1].content
 
     try:
@@ -238,7 +247,7 @@ Write in third person, with clinical style (e.g. the patient reported) and neutr
 
 
 def summarize(state: AgentState):
-
+    """Generate a clinical summary of the conversation and store it via the readmission API."""
     conversation = "\n".join(
         f"{type(m).__name__}: {m.content}" for m in state["messages"]
     )
@@ -267,7 +276,5 @@ def summarize(state: AgentState):
         r.raise_for_status()
     except Exception as e:
         print(f"Summary save failed: {e}")
-        print("Server said:", r.json())
 
-    print(">>> SUMMARIZE ran")
     return {"summary": summary}
