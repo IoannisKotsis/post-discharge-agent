@@ -1,9 +1,12 @@
 # Post-Discharge Follow-up Assistant
-An AI agent that provides conversational follow-up for discharged patients, built on top of a machine-learning readmission risk model.
+A conversational AI agent that follows up with recently discharged patients, grounded in a machine-learning hospital readmission risk model. Reported symptoms are combined with a per-patient risk score to decide whether to reassure, advise,
+or escalate.
 
-The App is deployed and publicly accessible at:  
-[Live APP](https://post-discharge-agent-yhuu7jups6jwzdhily85lj.streamlit.app/)
-[Connected to Hospital Readmission Prediction System:](https://hospital-readmission-prediction-production.up.railway.app)
+> ⚠️ Demonstration project. Not a medical device and not intended for clinical use.
+ 
+**Live demo:** https://post-discharge-agent-yhuu7jups6jwzdhily85lj.streamlit.app
+**Prediction API:** https://hospital-readmission-prediction-production.up.railway.app
+(companion service — see [Architecture](#architecture))
 
 ## Overview / The Problem:
 Hospital readmissions are costly and preventable. The first system predicts which patients are at risk within 30 days. But a prediction alone doesn't help the patient.
