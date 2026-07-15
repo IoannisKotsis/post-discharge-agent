@@ -5,15 +5,16 @@ from agent.nodes import (
     route_start,
     check_symptoms,
     route_severity,
-    escalate, assess_risk,
+    escalate,
+    assess_risk,
     initial_state,
     reassure,
-    summarize)
+    summarize,
+)
 from langgraph.graph import StateGraph
 from agent.state import AgentState
 from langchain_core.messages import HumanMessage
 from langgraph.graph import START, END
-
 
 # Create an empty graph
 graph = StateGraph(AgentState)
@@ -29,21 +30,18 @@ graph.add_node("summarize", summarize)
 
 # Wire up edges
 graph.add_conditional_edges(
-    START, route_start,
-    {
-     "greet": "greet",
-     "check_symptoms": "check_symptoms"
-     }
+    START, route_start, {"greet": "greet", "check_symptoms": "check_symptoms"}
 )
 graph.add_edge("greet", END)
 graph.add_edge("check_symptoms", "assess_risk")
 graph.add_conditional_edges(
-    "assess_risk", route_severity,
-        {
+    "assess_risk",
+    route_severity,
+    {
         "escalate": "escalate",
         "reassure": "reassure",
         "ask_followup": "ask_followup",
-        }
+    },
 )
 graph.add_edge("escalate", "summarize")
 graph.add_edge("ask_followup", "summarize")

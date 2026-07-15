@@ -31,9 +31,9 @@ for filename, text in content.items():
                 metadatas.append(meta)
             else:
                 meta = {"source": filename, "filename": filename}
-                metadatas.append(meta)         
+                metadatas.append(meta)
             ids.append(filename + "_" + str(counter))
-            counter+=1
+            counter += 1
 
 
 # Create ChromaDB
@@ -42,6 +42,4 @@ CHROMA_PATH = os.path.join(BASE_DIR, "..", "chroma_db")
 
 client = chromadb.PersistentClient(CHROMA_PATH)
 collection = client.get_or_create_collection("diabetes_guidelines")
-collection.add(documents=texts,
-               metadatas=metadatas,
-               ids=ids)
+collection.add(documents=texts, metadatas=metadatas, ids=ids)

@@ -21,7 +21,9 @@ st.markdown("""This assistant helps you check in after your hospital discharge.
             """)
 
 # Page configuration
-st.set_page_config(page_title="Post-discharge Follow-up Assistant", page_icon="🏥", layout="centered")
+st.set_page_config(
+    page_title="Post-discharge Follow-up Assistant", page_icon="🏥", layout="centered"
+)
 
 
 # Initialization : ONLY the first time
@@ -30,23 +32,25 @@ if "messages" not in st.session_state:
 
 if "closed" not in st.session_state:
     st.session_state["closed"] = False
-    
+
 if "outcome" not in st.session_state:
     st.session_state["outcome"] = None
 
 
 # Chat history
 for msg in st.session_state["messages"]:
-    with st.chat_message(msg["role"], avatar="🩺" if msg["role"]=="assistant" else "🧑"):
+    with st.chat_message(
+        msg["role"], avatar="🩺" if msg["role"] == "assistant" else "🧑"
+    ):
         st.write(msg["content"])
 
 if not st.session_state["closed"]:
     if prompt := st.chat_input("👋Hello, how are you feeling today?"):
         st.session_state["messages"].append({"role": "user", "content": prompt})
-        
+
         with st.spinner("Checking your symptoms..."):
             result = app.invoke(initial_state(8, HumanMessage(prompt)))
-        
+
         st.session_state["messages"].append(
             {"role": "assistant", "content": result["messages"][-1].content}
         )
@@ -64,8 +68,3 @@ else:
         st.session_state["closed"] = False
         st.session_state["outcome"] = None
         st.rerun()
-    
-        
-        
-        
-    

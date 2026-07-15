@@ -23,26 +23,37 @@ then refer to a doctor. Ask a relevant follow-up question to continue checking o
 You talk simply, with empathy and kindly.
 """
 
+
 # Greeting
 def greet(state: AgentState):
     greeting = AIMessage("Hello, how are you feeling today?")
     return {"messages": [greeting]}
-    
+
+
 # Ask followup
 def ask_followup(state: AgentState):
     patient_message = state["messages"][-1].content
     retrieved = retrieve(patient_message)
-    
+
     context = ""
     for chunk in retrieved:
         context += f"{chunk['text']}\n"
-        
-    response = llm.invoke([
-        SystemMessage(SYSTEM_PROMPT),
-        HumanMessage(f"Patient said: {patient_message}\n\nRelevant guidelines:\n{context}")      
-    ])
-            
-    return {"retrieved_chunks": retrieved, "messages": [response], "outcome": "followup"}
+
+    response = llm.invoke(
+        [
+            SystemMessage(SYSTEM_PROMPT),
+            HumanMessage(
+                f"Patient said: {patient_message}\n\nRelevant guidelines:\n{context}"
+            ),
+        ]
+    )
+
+    return {
+        "retrieved_chunks": retrieved,
+        "messages": [response],
+        "outcome": "followup",
+    }
+
 
 # Decide entry point: greet if conversation just started, else answer the patient
 def route_start(state: AgentState):
@@ -51,7 +62,7 @@ def route_start(state: AgentState):
     else:
         return "check_symptoms"
 
-    
+
 # Decide the symptoms severity
 CLASSIFY_PROMPT = """
 You are a triage classifier for diabetic patients after discharge.
@@ -63,24 +74,30 @@ The criterias are:
     - none: everything is fine, no need to worry
 """
 
+
 def check_symptoms(state: AgentState):
     patient_message = state["messages"][-1].content
-    
-    response = llm.invoke([
-        SystemMessage(CLASSIFY_PROMPT),
-        HumanMessage(f"Patient said: {patient_message}")      
-    ])
-    
+
+    response = llm.invoke(
+        [
+            SystemMessage(CLASSIFY_PROMPT),
+            HumanMessage(f"Patient said: {patient_message}"),
+        ]
+    )
+
     severity_levels = ["none", "advice", "urgent", "emergency"]
-    symptoms_severity = "".join(c for c in (response.content).strip().lower() if c.isalpha())
+    symptoms_severity = "".join(
+        c for c in (response.content).strip().lower() if c.isalpha()
+    )
     if symptoms_severity not in severity_levels:
         symptoms_severity = "advice"
-        
+
     return {"red_flag": symptoms_severity}
 
 
 # Decide severity: escalate if urgent/emergency , else ask follow-up question
 HIGH_RISK_THRESHOLD = 0.7
+
 
 def route_severity(state: AgentState):
     # Serious symptom always escalates — risk score cannot override
@@ -91,10 +108,10 @@ def route_severity(state: AgentState):
     if risk is not None and risk >= HIGH_RISK_THRESHOLD:
         return "escalate"
     # Mild symptom, low risk → routine follow-up
-    if state["red_flag"] == "none":     
+    if state["red_flag"] == "none":
         return "reassure"
     return "ask_followup"
-    
+
 
 # Escalate case
 ESCALATE_PROMPT = """
@@ -106,26 +123,31 @@ Use ONLY the guidelines provided below. If they don't cover the situation, tell 
 Your talking tone is serious but calm, not panicky. Do not close with a question but give a clear response in total.
 """
 
+
 def escalate(state: AgentState):
     patient_message = state["messages"][-1].content
     severity_level = state["red_flag"]
     risk_score = state["risk_score"]
-    
+
     try:
         retrieved = retrieve(patient_message)
     except Exception as e:
         print(f"Retrieval failed: {e}")
         retrieved = []
-    
+
     if not retrieved:
         return {"messages": [AIMessage("Contact immediately a doctor or go to A&E.")]}
-    
+
     context = "\n".join(chunk["text"] for chunk in retrieved)
-    response = llm.invoke([
-        SystemMessage(ESCALATE_PROMPT),
-        HumanMessage(f"Patient said: {patient_message}\nSymptoms severity: {severity_level}\nReadmission risk: {risk_score}\nRelevant guidelines:\n{context}")      
-    ])
-    
+    response = llm.invoke(
+        [
+            SystemMessage(ESCALATE_PROMPT),
+            HumanMessage(
+                f"Patient said: {patient_message}\nSymptoms severity: {severity_level}\nReadmission risk: {risk_score}\nRelevant guidelines:\n{context}"
+            ),
+        ]
+    )
+
     return {"messages": [response], "outcome": "escalate"}
 
 
@@ -134,10 +156,10 @@ def assess_risk(state: AgentState):
     if state.get("risk_score") is not None:
         return {}
     patient_id = state["patient_id"]
-    
+
     url = os.getenv("READMISSION_API_URL")
     final_url = f"{url}/risk/{patient_id}"
-    
+
     try:
         response = requests.get(final_url)
         response.raise_for_status()
@@ -146,8 +168,9 @@ def assess_risk(state: AgentState):
     except Exception as e:
         print(f"Risk API failed: {e}")
         risk_score = 1
-        
+
     return {"risk_score": float(risk_score)}
+
 
 # Initial state fields
 def initial_state(patient_id, first_message):
@@ -170,25 +193,37 @@ their care team. Your talking tone is serious and calm. The goal is to comfort t
 Do not close your answer with a question.
 """
 
+
 def reassure(state: AgentState):
     patient_message = state["messages"][-1].content
-    
+
     try:
         retrieved = retrieve(patient_message)
     except Exception as e:
         print(f"Retrieval failed: {e}")
         retrieved = []
-    
+
     if not retrieved:
-        return {"messages": [AIMessage("Based on what you've described, this doesn't appear urgent, but contact your care team as I cannot guide you specifically at this point.")]}
-    
+        return {
+            "messages": [
+                AIMessage(
+                    "Based on what you've described, this doesn't appear urgent, but contact your care team as I cannot guide you specifically at this point."
+                )
+            ]
+        }
+
     context = "\n".join(chunk["text"] for chunk in retrieved)
-    response = llm.invoke([
-        SystemMessage(REASSURANCE_PROMPT),
-        HumanMessage(f"Patient said: {patient_message}\n\nRelevant guidelines:\n{context}")      
-    ])
-    
+    response = llm.invoke(
+        [
+            SystemMessage(REASSURANCE_PROMPT),
+            HumanMessage(
+                f"Patient said: {patient_message}\n\nRelevant guidelines:\n{context}"
+            ),
+        ]
+    )
+
     return {"messages": [response], "outcome": "reassure"}
+
 
 # Summarize conversation
 
@@ -201,34 +236,38 @@ The summary must be concise (2-3 sentences) in order for the doctor to scan it f
 Write in third person, with clinical style (e.g. the patient reported) and neutral tone.
 """
 
-def summarize(state: AgentState):   
-   
+
+def summarize(state: AgentState):
+
     conversation = "\n".join(
         f"{type(m).__name__}: {m.content}" for m in state["messages"]
     )
-    response = llm.invoke([
-        SystemMessage(SUMMARY_PROMPT),
-        HumanMessage(f"Here is the conversation to summarize:\n\n{conversation}")
-    ])
+    response = llm.invoke(
+        [
+            SystemMessage(SUMMARY_PROMPT),
+            HumanMessage(f"Here is the conversation to summarize:\n\n{conversation}"),
+        ]
+    )
     summary = response.content
-    
+
     patient_id = state["patient_id"]
     red_flag = state["red_flag"]
     url = os.getenv("READMISSION_API_URL")
     final_url = f"{url}/summary"
-    
+
     try:
-        r = requests.post(final_url, json = {
-            "patient_id": patient_id,
-            "summary": summary,
-            "final_red_flag": red_flag
-            })
+        r = requests.post(
+            final_url,
+            json={
+                "patient_id": patient_id,
+                "summary": summary,
+                "final_red_flag": red_flag,
+            },
+        )
         r.raise_for_status()
     except Exception as e:
         print(f"Summary save failed: {e}")
         print("Server said:", r.json())
-    
+
     print(">>> SUMMARIZE ran")
     return {"summary": summary}
-        
-    
