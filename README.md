@@ -40,24 +40,41 @@ graph TD;
 
 ## Key Design Decisions
 
-Why state machine over ReAct?
+### State machine over ReAct
+The agent is built as an explicit `StateGraph` (LangGraph) rather than a prebuilt
+ReAct agent:  
+- **Deterministic routing.** Every patient follows the same path through the graph.
+  A ReAct agent lets the LLM choose which tools to call and in what order, so two identical cases can take different routes.
+- **Auditability.** In a clinical setting, the flow must be inspectable and
+  reproducible. An explicit graph makes every transition traceable while a ReAct loop is opaque by comparison.
+- **Safety.** A ReAct agent could skip the risk assessment entirely and reassure a patient reporting severe symptoms. The graph makes that path unreachable.
+- **Custom state.** The state schema is modelled on the assistant's actual needs (symptoms, risk score, escalation level) instead of a generic message list.
 
-Risk Score Usage: The application is using the patient's readmission risk in order to guide more relevantly. This score can only upgrade the severity of a patient profile and tries to avoid cases where risk is high but symptoms mild.
+### Risk score can only escalate
+Risk is monotonic: any node may raise the patient's risk level, none may lower it.
+If the LLM judges the reported symptoms to be mild but the readmission score is high, the high score wins. The reverse never happens.
 
-Agent calls Readmission Prediction API for information
+### The agent consumes the prediction API, not the database
+- The Readmission API owns the database and its schema.
+- A direct database connection would break the assistant on any future schema change.
+- The agent holds no database credentials, reducing its access surface.
 
-What happens when API fails?
-When the API fails and cannor retrieve the patient's readmission risk score, the App assumes maximum risk (100%) in order to not lose any critical case that had a hih risk and did not see it.
+> Deployment: the Readmission API runs on Railway, the assistant on Streamlit.
+
+### Fail-safe on API failure
+If the readmission risk score cannot be retrieved, the agent assumes maximum risk (100%) rather than proceeding without one. A missing score must never cause a high-risk case to be treated as routine — false alarms are cheap here, misses are not.  
+
 
 ## Tech Stack
 
 | Category | Technology |
 |---|---|
-| AI Agent | LangGraph, AnthropicAPI |
+| AI Agent | LangGraph |
 | API | FastAPI |
 | Database | PostgreSQL, ChromaDB (RAG) |
-| LLM | Claude |
-| Deployment | Streamlit |
+| LLM | Claude (Anthropic API) |
+| Frontend | Streamlit |
+| Deployment | Streamlit Community Cloud, Railway |
 | Language | Python |
 
 ## Features
