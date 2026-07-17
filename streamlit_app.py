@@ -49,7 +49,7 @@ if not st.session_state["closed"]:
         st.session_state["messages"].append({"role": "user", "content": prompt})
 
         with st.spinner("Checking your symptoms..."):
-            result = app.invoke(initial_state(8, HumanMessage(prompt)))
+            result = app.invoke(initial_state(17, HumanMessage(prompt)))
 
         st.session_state["messages"].append(
             {"role": "assistant", "content": result["messages"][-1].content}
