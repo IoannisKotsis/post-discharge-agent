@@ -12,7 +12,7 @@ os.environ["READMISSION_API_URL"] = st.secrets["READMISSION_API_URL"]
 
 
 # UI Title
-st.title("Post-discharge Follow-up Agent")
+st.title("🤖Post-discharge Follow-up Agent")
 
 # App explanation markdown
 st.markdown("""This assistant helps you check in after your hospital discharge.
