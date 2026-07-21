@@ -187,7 +187,6 @@ def initial_state(patient_id, first_message):
         "risk_score": None,
         "red_flag": "none",
         "retrieved_chunks": [],
-        "shap_features": {},
         "summary": "",
         "messages": [first_message],
     }

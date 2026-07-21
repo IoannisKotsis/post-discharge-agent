@@ -7,7 +7,6 @@ from langgraph.graph.message import add_messages
 class AgentState(TypedDict):
     patient_id: int
     risk_score: float
-    shap_features: dict
     retrieved_chunks: list
     red_flag: Literal["none", "advice", "urgent", "emergency"]
     outcome: Literal["escalate", "reassure", "followup"]
