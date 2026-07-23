@@ -9,6 +9,7 @@ class AgentState(TypedDict):
     risk_score: float
     retrieved_chunks: list
     red_flag: Literal["none", "advice", "urgent", "emergency"]
-    outcome: Literal["escalate", "reassure", "followup"]
+    outcome: Literal["escalate", "reassure", "followup", "human_handoff"]
     summary: str
     messages: Annotated[list, add_messages]
+    followup_count: int

@@ -49,11 +49,14 @@ def ask_followup(state: AgentState):
             ),
         ]
     )
+    
+    
 
     return {
         "retrieved_chunks": retrieved,
         "messages": [response],
         "outcome": "followup",
+        "followup_count": state.get("followup_count", 0) + 1
     }
 
 
@@ -101,10 +104,11 @@ def check_symptoms(state: AgentState):
 
 # Decide severity: escalate if urgent/emergency , else ask follow-up question
 HIGH_RISK_THRESHOLD = 0.7
+MAX_FOLLOWUPS = 3
 
 
 def route_severity(state: AgentState):
-    """Route to escalate/reassure/ask_followup. Risk score can only raise severity, never lower it."""
+    """Route to escalate/reassure/ask_followup/human_handoff. Risk score can only raise severity, never lower it."""
     # Serious symptom always escalates — risk score cannot override
     if state["red_flag"] in ("urgent", "emergency"):
         return "escalate"
@@ -115,7 +119,19 @@ def route_severity(state: AgentState):
     # Mild symptom, low risk → routine follow-up
     if state["red_flag"] == "none":
         return "reassure"
+    
+    if state.get("followup_count", 0) >= MAX_FOLLOWUPS:
+        return "human_handoff"
+    
     return "ask_followup"
+
+def human_handoff(state: AgentState):
+    """Route to handoff the patient to their doctor/care team  due to inaccurate patient's responses"""
+    # Hand off patient to doctor/care team 
+    handoff_message = AIMessage("""I want to make sure you get the right guidance, and I'm not able to assess your symptoms accurately from our conversation.
+                                Please contact your care team so they can check on you.""")
+    return {"messages": [handoff_message], "outcome": "human_handoff"}
+    
 
 
 # Escalate case
@@ -180,7 +196,7 @@ def assess_risk(state: AgentState):
 
 
 # Initial state fields
-def initial_state(patient_id, first_message):
+def initial_state(patient_id, first_message, followup_count=0):
     """Build a fresh AgentState for a new conversation."""
     return {
         "patient_id": patient_id,
@@ -189,6 +205,7 @@ def initial_state(patient_id, first_message):
         "retrieved_chunks": [],
         "summary": "",
         "messages": [first_message],
+        "followup_count": followup_count
     }
 
 
@@ -239,7 +256,8 @@ SUMMARY_PROMPT = """
 You are a post-discharge assistant for diabetic patients. You are reading the messages exchanged between the agent and the patient
 and you give to the doctor a summary of this conversation, without adding additional information. The summary must include:
     - patient's symptoms
-    - conversation outcome (escalation / advice)
+    - conversation outcome (escalation / advice / human handoff)
+The human handoff means that the assistant could not assess the symptoms after repeated follow-ups.
 The summary must be concise (2-3 sentences) in order for the doctor to scan it fast and understand the meaning easily.
 Write in third person, with clinical style (e.g. the patient reported) and neutral tone.
 """
@@ -259,7 +277,7 @@ def summarize(state: AgentState):
     summary = response.content
 
     patient_id = state["patient_id"]
-    red_flag = state["red_flag"]
+    outcome = state["outcome"]
     url = os.getenv("READMISSION_API_URL")
     final_url = f"{url}/summary"
 
@@ -269,7 +287,7 @@ def summarize(state: AgentState):
             json={
                 "patient_id": patient_id,
                 "summary": summary,
-                "final_red_flag": red_flag,
+                "final_red_flag": outcome,
             },
         )
         r.raise_for_status()

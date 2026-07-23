@@ -35,6 +35,9 @@ if "closed" not in st.session_state:
 
 if "outcome" not in st.session_state:
     st.session_state["outcome"] = None
+    
+if "followup_count" not in st.session_state:
+    st.session_state["followup_count"] = 0
 
 
 # Chat history
@@ -49,7 +52,9 @@ if not st.session_state["closed"]:
         st.session_state["messages"].append({"role": "user", "content": prompt})
 
         with st.spinner("Checking your symptoms..."):
-            result = app.invoke(initial_state(17, HumanMessage(prompt)))
+            result = app.invoke(initial_state(17, HumanMessage(prompt), st.session_state["followup_count"]))
+            
+        st.session_state["followup_count"] = result["followup_count"]
 
         st.session_state["messages"].append(
             {"role": "assistant", "content": result["messages"][-1].content}
@@ -63,8 +68,11 @@ else:
         st.info("No need to worry. Have a great day!")
     elif st.session_state["outcome"] == "escalate":
         st.info("Please follow the guidance above and seek care as advised. Take care.")
+    elif st.session_state["outcome"] == "human_handoff":
+        st.info("Please reach out to your care team so they can assess you properly.")
     if st.button("💬New conversation"):
         st.session_state["messages"] = []
         st.session_state["closed"] = False
         st.session_state["outcome"] = None
+        st.session_state["followup_count"] = 0
         st.rerun()

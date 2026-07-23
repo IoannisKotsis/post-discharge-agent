@@ -7,9 +7,9 @@ from agent.nodes import (
     route_severity,
     escalate,
     assess_risk,
-    initial_state,
     reassure,
     summarize,
+    human_handoff
 )
 from langgraph.graph import StateGraph
 from agent.state import AgentState
@@ -27,6 +27,7 @@ graph.add_node("escalate", escalate)
 graph.add_node("assess_risk", assess_risk)
 graph.add_node("reassure", reassure)
 graph.add_node("summarize", summarize)
+graph.add_node("human_handoff", human_handoff)
 
 # Wire up edges
 graph.add_conditional_edges(
@@ -41,10 +42,12 @@ graph.add_conditional_edges(
         "escalate": "escalate",
         "reassure": "reassure",
         "ask_followup": "ask_followup",
-    },
+        "human_handoff": "human_handoff"    
+        },
 )
 graph.add_edge("escalate", "summarize")
 graph.add_edge("ask_followup", "summarize")
+graph.add_edge("human_handoff", "summarize")
 graph.add_edge("summarize", END)
 graph.add_edge("reassure", END)
 
