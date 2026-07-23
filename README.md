@@ -88,3 +88,8 @@ If the readmission risk score cannot be retrieved, the agent assumes maximum ris
 - **RAG-grounded responses** — answers are grounded in clinical guidelines (ChromaDB), with a safety fallback when no relevant guideline is found
 - **Conversation summaries for clinicians** — generates a concise, clinical-style summary of each conversation and stores it for the care team
 - **Bounded conversation** - the conversation ends when the situation is clear ad remains open only when the Assistant needs further information
+
+## Limitations/Future Work 
+
+Stateless followup: Each message is evaluated independently and the agent doesn't save conversation history between turns. That means that the agent can repeat
+a question the patient already answered. Passing the full message history into the state would fix this.
